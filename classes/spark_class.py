@@ -62,7 +62,7 @@ class RoseSpark:
         df2 = spark.createDataFrame(df1)
         return df2
     
-    def df_to_csv(self, df:DataFrame, dir_path:str, file_name:str):
+    def clean_df_to_csv(self, df:DataFrame, dir_path:str, file_name:str):
         def make_clean_csv_dir(dir_path:str) -> str:
             '''pass in the desired path of the folder clean_csv as dir_path so
             path=make_clean_csv_dir...!'''
@@ -70,14 +70,18 @@ class RoseSpark:
             if not os.path.exists(dir_path) and isinstance(dir_path, str):
                 '''this will both make a new path and generate a usable str token'''
                 os.mkdir(dir_path)
-                return dir_path
+            #regardless, return str
+            return dir_path
             
         def export_to_csv(df, dir_path, file_name):
+            #automate the writing of spark df to csv
             '''in this function, pass the str that is dir path, and desired file_name to save '''
             return df.coalesce(1).write.format("csv").option("header", "true")\
                      .save(f"{dir_path}/{file_name}.csv")
-                    
+        
+        #create new dir if not exists and generate dir_path string          
         dir_path = make_clean_csv_dir(dir_path)
+        #write df to csv file and export file to clean dir
         return export_to_csv(df, dir_path, file_name)
 ########################################################################  
 

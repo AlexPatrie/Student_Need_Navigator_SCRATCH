@@ -1,4 +1,3 @@
-from distutils.command.clean import clean
 import json, os, re, sys
 import logging 
 from time import asctime 
@@ -53,8 +52,7 @@ def main(project_dir:str) -> None:
     df = pd_to_spark_df(rose, "SELECT * FROM students_08142022", connection)
     #use job func to remove null and standardize schema
     clean_df = clean_student_data(rose, df) 
-    export_clean_df(clean_df,  
-                    "cleaned_students")#<-filename 
+    export_clean_df(clean_df, "cleaned_students")#<-filename 
     rose.stop()
     
  
@@ -119,10 +117,7 @@ def export_clean_df(df:DataFrame, file_name:str):
 if __name__ == "__main__":
     main(project_dir)
     
-'''okay so now we must use pd to read sql and retrieve a df based on that!'''
 
-#'postgresql:///User_Students_Master_2022'
-#print(df)
 
 
 
