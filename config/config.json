@@ -1,0 +1,10 @@
+{
+    "spark_conf": {
+        "master": "local[*]",
+        "app_name": "StudentNeedNavigator"
+    },
+    
+    "log": {
+        "level": null 
+    } 
+}
