@@ -52,19 +52,6 @@ class RoseSpark:
         return (open_json(file_path))
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     def make_clean_csv_dir(self, dir_path:str) -> str:
         '''pass in the desired path of the folder clean_csv as dir_path so
            path=make_clean_csv_dir...!'''
