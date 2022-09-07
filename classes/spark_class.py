@@ -1,4 +1,5 @@
 import json, os, re, sys
+import pandas as pd 
 from typing import Callable, Optional 
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql import SparkSession
@@ -8,7 +9,9 @@ class RoseSpark:
     
     def __init__(self, config):
         self.config = config 
-        
+######################################################################## 
+
+#CONFIG SECTION  
     def sparkStart(self, kwargs:Optional[dict]=None):
         #these are the nested values, calling by KEY name from the need_nav.json
         MASTER = kwargs['spark_conf']['master']
@@ -36,7 +39,7 @@ class RoseSpark:
         set_logging(spark, LOG_LEVEL)       
         get_settings(spark)
         return spark 
-    
+  
     def open_file(self, file_path: str) -> dict:
         #automatically, this func occurs, same arg params
         def open_json(file_path: str) -> dict:
@@ -50,8 +53,15 @@ class RoseSpark:
                 return data                         
         print(f'\033[91m{file_path} file opened!\033[1m')    
         return (open_json(file_path))
-    
-    
+########################################################################  
+
+#LOAD, READ AND STANDARDIZE SCHEMA/DF   
+
+    def pd_to_spark_df(spark, sql, conn):
+        df1 = pd.read_sql(sql, con=conn)
+        df2 = spark.createDataFrame(df1)
+        return df2
+
     def make_clean_csv_dir(self, dir_path:str) -> str:
         '''pass in the desired path of the folder clean_csv as dir_path so
            path=make_clean_csv_dir...!'''
@@ -66,3 +76,6 @@ class RoseSpark:
         file_path = self.make_clean_csv_dir(dir_path)
         return df.coalesce(1).write.format("csv").option("header", "true")\
                  .save(f"{file_path}/{file_name}.csv")
+########################################################################  
+
+#VISUALIZE DATA
