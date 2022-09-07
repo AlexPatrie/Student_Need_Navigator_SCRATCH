@@ -7,7 +7,7 @@ journal = 'my_coding_journey'
 #################################################
 conn_type = 'postgresql'
 hostname = 'localhost'
-db_name = journal
+db_name = august_22_db
 username = 'postgres'
 pwd = admin
 port_id = 5432

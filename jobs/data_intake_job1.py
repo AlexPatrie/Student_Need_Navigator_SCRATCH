@@ -53,7 +53,8 @@ def main(project_dir:str) -> None:
     df = pd_to_spark_df(rose, "SELECT * FROM students_08142022", connection)
     #use job func to remove null and standardize schema
     clean_df = clean_student_data(rose, df) 
-    export_clean_df(clean_df, "cleaned_students")
+    export_clean_df(clean_df,  
+                    "cleaned_students")#<-filename 
     rose.stop()
     
  
@@ -111,7 +112,9 @@ def clean_student_data(spark, df):
 
 def export_clean_df(df:DataFrame, file_name:str):
     if isinstance(df, DataFrame):
-        return RoseSpark(config={}).export_to_csv(df, file_name)
+        return RoseSpark(config={}).df_to_csv(df, 
+                                              "/Users/alex/Desktop/Student_Need_Navigator_SCRATCH/clean_csv",
+                                              file_name)
     
 if __name__ == "__main__":
     main(project_dir)
