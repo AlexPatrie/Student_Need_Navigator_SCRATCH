@@ -13,3 +13,62 @@ PROGRAM FEATURES:
 ** Data Standardization/Preprocessing(Spark, Pandas, Mlib, Tensorflow/Pytorch Preprocessing)
 
 ** Data Analysis(Seaborn) and Prediction(Tensorflow)
+
+
+Here is the proposed process for the pipeline:
+
+++Student Entry(SQL Alchemy/Postgress) =>
+    -Here the user inputs student demographical data as well as lesson observations 
+     and content of the last lesson. Cols are as such:
+        -name
+        -instrument
+        -age
+        -contact info
+        -day of study
+        -time of study
+        -keyword observations of the last lesson
+        -Status(from 1 to 5 ascending, how is it going with the student based off of this week?)
+        -Material Covered
+    -The table gets put into a Postgres db under a db that is unique for each month
+     in the year, where each month is a db.
+    
+++Read and Clean/Transform(SQL->Pandas->Spark) =>
+    -Here the table(entries for the week) is read out of Postgres and into 
+     a dataframe with pandas.read_sql
+    -The df is then converted into a spark df so that it can be extensively manipulated.
+    -A spark connector class is created that has methods which make a spark connection,
+     read csvs or tables, drop/fill na, and more.
+    -Schema dtypes are regularized such that all str are str, and all nums are float
+    -A key part to that spark class is the ability to visualize the information. 
+     it gets inherited by another class in the next script! 
+
+++Analyze and Visualize the Data(Spark/Pandas->Seaborn/TextBlob) =>
+    -Here we determine correlations based on descriptive elements of
+     the df...so using elements that are custom determined and also from 
+     pandasProfilingReport to create visualizations for correlation. This 
+     will help us with feature extraction.
+
+++Preprocess The Dataframe(Spark/Pandas->NLTK->Tensorflow) =>
+    -Here the dataframe is preprocessed. 
+    -Numerical Features are regularized(divided by the max() value of the group)
+    -Categorical features are vectorized(using lemmatization, and tokenization) and
+     also regularized
+    -X and y are defined, however train, test, validation are NOT
+
+++Create model and make predictions based on the preprocessed data(Tensorflow->Spark/Pandas->SqlAlch->Postgres) =>
+    -Partition the preprocessed data such that 80%(train) 10%(Validation)
+     and 10%(Test)
+    -Establish Embedding and Vectorization layers that require a specific data shape
+    -Reshape data and fit the embedding layer with the preprocessed data
+    -Create the architecture of a 1D CNN that takes the preprocessed data as
+     input of specific shape
+    -Output predictions based on the labels of the data, in this case what we want 
+     to predict(what the student should be studying)
+    -Use Spark to create a df out of the predictions
+    -SparkDf to SqlAlch create table into a predictions db within Postgres
+
+++Interact with predictions(Spark) =>
+    -Loop back the predictions by appending the predictions to the original student
+     name as foregin key
+    -Provide a final 'historical' df with all data, observations, and predictions.
+    -Traverse the history based on user preferences.
