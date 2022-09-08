@@ -55,11 +55,10 @@ def main(project_dir:str) -> None:
     df = pd_to_spark_df(rose, "SELECT * FROM students_08142022", connection)
     #use job func to remove null and standardize schema
     clean_df = clean_student_data(rose, df) 
-    #export to dedicated dir for sending to another db as a table that will 
-    #soon have the model's predictions appended on to it!
-    export_clean_df(clean_df, project_dir, "cleaned_students.csv")#<-filename to be written
+    export_clean_df(df=clean_df, project_dir=project_dir, file_name="cleaned_students", is_spark=False)#<-filename to be written
+    #clean_csv_name(project_dir, "cleaned_students")
     rose.stop()
-    
+
  
 def open_config(file_path: str) -> dict:
     if isinstance(file_path, str):
@@ -114,17 +113,19 @@ def clean_student_data(spark, df):
   return df_final 
 
 #takes the same amount of args
-def export_clean_df(df:DataFrame, project_dir:str, file_name:str):
+def export_clean_df(df:DataFrame, project_dir:str, file_name:str, is_spark:bool):
     if isinstance(df, DataFrame):
-        df = RoseSpark(config={}).clean_df_to_csv(df, 
-                                                  f"{project_dir}/clean_csv/",
-                                                  file_name)
-        return RoseSpark(config={}).clean_file_names(f"{project_dir}/clean_csv/",
-                                                     file_name)
+        return RoseSpark(config={}).clean_df_to_csv(df, project_dir, file_name, is_spark)
+    
+def clean_csv_name(project_dir, file_name):
+    return RoseSpark(config={}).clean_file_names(project_dir, file_name)
     
 if __name__ == "__main__":
     main(project_dir)
-    
+
+
+#export to dedicated dir for sending to another db as a table that will 
+    #soon have the model's predictions appended on to it!  
 
 
 
