@@ -12,7 +12,7 @@ class RoseSpark:
 ######################################################################## 
 
 #CONFIG SECTION  
-    def sparkStart(self, kwargs:Optional[dict]=None):
+    def spark_start(self, kwargs:Optional[dict]=None):
         #these are the nested values, calling by KEY name from the need_nav.json
         MASTER = kwargs['spark_conf']['master']
         APP_NAME = kwargs['spark_conf']['app_name']
@@ -56,7 +56,6 @@ class RoseSpark:
 ########################################################################  
 
 #LOAD, READ AND STANDARDIZE SCHEMA/DF   
-
     def pd_to_spark_df(self, spark, sql, conn):
         df1 = pd.read_sql(sql, con=conn)
         df2 = spark.createDataFrame(df1)
@@ -72,6 +71,8 @@ class RoseSpark:
                 os.mkdir(dir_path)
             #regardless, return str
             return dir_path
+        
+        
             
         def export_to_csv(df, dir_path, file_name):
             #automate the writing of spark df to csv
@@ -85,4 +86,12 @@ class RoseSpark:
         return export_to_csv(df, dir_path, file_name)
 ########################################################################  
 
-#VISUALIZE DATA
+#READ DATA FOR PREPROCESSING
+    def fetch_read_csv(self, spark:SparkSession, file_dirpath:str, file_name:str) -> DataFrame:
+        if os.path.exists(file_dirpath):
+            df = spark.read.format('csv').option('header', 'true')\
+                        .option('inferSchema', 'true').load(f"{file_name}.csv")
+            df.printSchema()
+            df.show(2)
+            return df 
+########################################################################  

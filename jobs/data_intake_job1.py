@@ -64,7 +64,7 @@ def open_config(file_path: str) -> dict:
 
 def spark_start(conf: dict) -> SparkSession:
     if isinstance(conf, dict):
-        return RoseSpark(config={}).sparkStart(conf)
+        return RoseSpark(config={}).spark_start(conf)
     
 def spark_stop(spark:SparkSession) -> None:
     spark.stop() if isinstance(spark, SparkSession) else None 
@@ -112,9 +112,9 @@ def clean_student_data(spark, df):
 
 def export_clean_df(df:DataFrame, file_name:str):
     if isinstance(df, DataFrame):
-        return RoseSpark(config={}).df_to_csv(df, 
-                                              "/Users/alex/Desktop/Student_Need_Navigator_SCRATCH/clean_csv",
-                                              file_name)
+        return RoseSpark(config={}).clean_df_to_csv(df, 
+                                                    "/Users/alex/Desktop/Student_Need_Navigator_SCRATCH/clean_csv/cleaned_students/",
+                                                    file_name)
     
 if __name__ == "__main__":
     main(project_dir)
