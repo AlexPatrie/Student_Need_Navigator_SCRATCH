@@ -1,14 +1,13 @@
 
 scratch_pad.txt
-.DS_Store
-clean_csv/.DS_Store
-__pycache__
-clean_csv/.DS_Store
-_SUCCESS
-._SUCCESS.crc
+*.DS_Store
+*clean_csv/.DS_Store
+*__pycache__
+*clean_csv/.DS_Store
+*_SUCCESS
+*._SUCCESS.crc
 .part-00000-7138f65a-931a-4ea3-8239-66a585254e69-c000.csv.crc
 *.pyc
-clean_csv/.DS_Store
 *.csv
 *.log
 *.log
