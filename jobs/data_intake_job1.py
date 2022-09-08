@@ -46,6 +46,9 @@ def main(project_dir:str) -> None:
     conf = open_config(f"{project_dir}/config/config.json")
     #this applies the string(config) to spark start
     rose = spark_start(conf)
+    rose.conf.set("spark.sql.sources.commitProtocolClass", "org.apache.spark.sql.execution.datasources.SQLHadoopMapReduceCommitProtocol")
+    rose.conf.set("parquet.enable.summary-metadata", "false")
+    rose.conf.set("mapreduce.fileoutputcommitter.marksuccessfuljobs", "false")
     #create pg connection string
     connection = define_pg_connection()
     #use pd to read in sql table and convert to spark df!
@@ -54,7 +57,7 @@ def main(project_dir:str) -> None:
     clean_df = clean_student_data(rose, df) 
     #export to dedicated dir for sending to another db as a table that will 
     #soon have the model's predictions appended on to it!
-    export_clean_df(clean_df, "cleaned_students")#<-filename to be written
+    export_clean_df(clean_df, project_dir, "cleaned_students.csv")#<-filename to be written
     rose.stop()
     
  
@@ -110,11 +113,14 @@ def clean_student_data(spark, df):
   df_final.show()
   return df_final 
 
-def export_clean_df(df:DataFrame, file_name:str):
+#takes the same amount of args
+def export_clean_df(df:DataFrame, project_dir:str, file_name:str):
     if isinstance(df, DataFrame):
-        return RoseSpark(config={}).clean_df_to_csv(df, 
-                                                    "/Users/alex/Desktop/Student_Need_Navigator_SCRATCH/clean_csv/cleaned_students/",
-                                                    file_name)
+        df = RoseSpark(config={}).clean_df_to_csv(df, 
+                                                  f"{project_dir}/clean_csv/",
+                                                  file_name)
+        return RoseSpark(config={}).clean_file_names(f"{project_dir}/clean_csv/",
+                                                     file_name)
     
 if __name__ == "__main__":
     main(project_dir)

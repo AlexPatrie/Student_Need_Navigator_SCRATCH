@@ -66,24 +66,41 @@ class RoseSpark:
             '''pass in the desired path of the folder clean_csv as dir_path so
             path=make_clean_csv_dir...!'''
             #this method only occurs within the other method export to csv
-            if not os.path.exists(dir_path) and isinstance(dir_path, str):
-                '''this will both make a new path and generate a usable str token'''
-                os.mkdir(dir_path)
+            try:
+                if not os.path.exists(dir_path):
+                    '''this will both make a new path and generate a usable str token'''
+                    os.makedirs(dir_path) 
+            except:
+                if os.path.exists(dir_path):
+                    return None 
             #regardless, return str
             return dir_path
-        
-        
             
         def export_to_csv(df, dir_path, file_name):
             #automate the writing of spark df to csv
             '''in this function, pass the str that is dir path, and desired file_name to save '''
             return df.coalesce(1).write.format("csv").option("header", "true")\
-                     .save(f"{dir_path}/{file_name}.csv")
+                     .save(f"{dir_path}/{file_name}")
         
         #create new dir if not exists and generate dir_path string          
         dir_path = make_clean_csv_dir(dir_path)
         #write df to csv file and export file to clean dir
         return export_to_csv(df, dir_path, file_name)
+    
+########################################################################    
+    
+    def clean_file_names(self, dir_path, file_name): 
+            def rename_files(dir_path):
+                for files in os.listdir(dir_path):           
+                    try:
+                        os.rename(files, file_name)
+                    except FileExistsError:
+                        print("File already Exists")
+                        print("Removing existing file")
+                        os.remove(file_name)
+                        os.rename(files, file_name)
+            return rename_files(dir_path)
+        
 ########################################################################  
 
 #READ DATA FOR PREPROCESSING
