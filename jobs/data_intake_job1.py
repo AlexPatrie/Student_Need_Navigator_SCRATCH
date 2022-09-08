@@ -55,7 +55,8 @@ def main(project_dir:str) -> None:
     df = pd_to_spark_df(rose, "SELECT * FROM students_08142022", connection)
     #use job func to remove null and standardize schema
     clean_df = clean_student_data(rose, df) 
-    export_clean_df(df=clean_df, project_dir=project_dir, file_name="cleaned_students", is_spark=False)#<-filename to be written
+    #export the df into a csv that is in a dedicated dir...change file_name to specify new file_name
+    export_clean_df(df=clean_df, project_dir=project_dir, file_name="cleaned_students2", is_spark=False)#<-filename to be written
     #clean_csv_name(project_dir, "cleaned_students")
     rose.stop()
 

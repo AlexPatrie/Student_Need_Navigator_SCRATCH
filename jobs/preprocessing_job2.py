@@ -25,9 +25,7 @@ import typing
 def main(project_dir:str) -> None:
     conf = open_config(f"{project_dir}/config/config.json")
     rose = spark_start(conf)#<--Spark Cursor
-    clean_students_df = fetch_read_csv(rose, 
-                        "/Users/alex/Desktop/Student_Need_Navigator_SCRATCH/clean_csv/cleaned_students/",
-                        "cleaned_students")
+    clean_students_df = fetch_read_csv(rose, project_dir, "cleaned_students.csv") 
     rose.stop()
 
 
@@ -47,7 +45,7 @@ def spark_stop(spark:SparkSession) -> None:
 """1. READ IN FRESHLY-WRITTEN CSV TO SPARK DF FROM !DEDICATED(explicit)! CLEAN DIR"""
 #I like to order args by order of appearance within creation of funcs!
 def fetch_read_csv(spark:SparkSession, file_dirpath:str, file_name:str) -> DataFrame:
-    if os.path.exists(file_dirpath) and isinstance(file_dirpath, str):
+    if os.path.exists(file_dirpath):
         return RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, file_name)
         
 

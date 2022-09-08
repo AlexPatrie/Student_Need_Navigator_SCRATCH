@@ -131,7 +131,7 @@ class RoseSpark:
     def fetch_read_csv(self, spark:SparkSession, file_dirpath:str, file_name:str) -> DataFrame:
         if os.path.exists(file_dirpath):
             df = spark.read.format('csv').option('header', 'true')\
-                        .option('inferSchema', 'true').load(f"{file_name}.csv")
+                           .option('inferSchema', 'true').load(f"{file_dirpath}/clean_csv/{file_name}")
             df.printSchema()
             df.show(2)
             return df 
