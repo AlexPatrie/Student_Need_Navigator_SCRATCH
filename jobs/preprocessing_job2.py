@@ -22,10 +22,11 @@ import pandas as pd
 import typing 
 
 """MAIN EXECUTABLE FUNCTION THAT HOUSES JOB ACTIONS"""
-def main(project_dir:str) -> None:
+def main_preprocessing(project_dir:str) -> None:
     conf = open_config(f"{project_dir}/config/config.json")
     rose = spark_start(conf)#<--Spark Cursor
-    clean_students_df = fetch_read_csv(rose, project_dir, "cleaned_students.csv") 
+    clean_students_df = extract_df(rose, project_dir, -1) 
+    #show_dfs(rose, project_dir)
     rose.stop()
 
 
@@ -44,12 +45,25 @@ def spark_stop(spark:SparkSession) -> None:
 
 """1. READ IN FRESHLY-WRITTEN CSV TO SPARK DF FROM !DEDICATED(explicit)! CLEAN DIR"""
 #I like to order args by order of appearance within creation of funcs!
-def fetch_read_csv(spark:SparkSession, file_dirpath:str, file_name:str) -> DataFrame:
+def show_dfs(spark:SparkSession, file_dirpath:str) -> DataFrame:
     if os.path.exists(file_dirpath):
-        return RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, file_name)
+        #here we recursively target the file name as a string and extract it from os.walk
+        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[10]):
+            i = 0 
+            while i < len(filenames): 
+                RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, filenames[i])
+                i += 1
+
+def extract_df(spark:SparkSession, file_dirpath:str, i:int) -> DataFrame:
+    if os.path.exists(file_dirpath):
+        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[10]):
+            print(filenames)
+            return RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, filenames[i])
+        
+                
         
 
 """RUN MAIN FUNCTION"""  
 
 if __name__ == "__main__":
-    main(project_dir)
+    main_preprocessing(project_dir)

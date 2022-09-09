@@ -41,7 +41,7 @@ def define_pg_connection():
 
 from classes.spark_class import RoseSpark
 
-def main(project_dir:str) -> None:
+def main_data_intake(project_dir:str) -> None:
     #this executes the func below, which requires the following formatted string(.json'''
     conf = open_config(f"{project_dir}/config/config.json")
     #this applies the string(config) to spark start
@@ -56,7 +56,7 @@ def main(project_dir:str) -> None:
     #use job func to remove null and standardize schema
     clean_df = clean_student_data(rose, df) 
     #export the df into a csv that is in a dedicated dir...change file_name to specify new file_name
-    export_clean_df(df=clean_df, project_dir=project_dir, file_name="cleaned_students2", is_spark=False)#<-filename to be written
+    export_clean_df(df=clean_df, project_dir=project_dir, file_name="cleaned_studentsU", is_spark=False)#<-filename to be written
     #clean_csv_name(project_dir, "cleaned_students")
     rose.stop()
 
@@ -121,8 +121,8 @@ def export_clean_df(df:DataFrame, project_dir:str, file_name:str, is_spark:bool)
 def clean_csv_name(project_dir, file_name):
     return RoseSpark(config={}).clean_file_names(project_dir, file_name)
     
-if __name__ == "__main__":
-    main(project_dir)
+#if __name__ == "__main__":
+#    main_data_intake(project_dir)
 
 
 #export to dedicated dir for sending to another db as a table that will 

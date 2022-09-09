@@ -55,41 +55,8 @@ class RoseSpark:
         df1 = pd.read_sql(sql, con=conn)
         df2 = spark.createDataFrame(df1)
         return df2
-    
-    def list_directory(self, directory:str, pattern:Optional[str]=None) -> list:
-        def iterate_file_list(directory:str) -> list:
-            if os.path.exists(directory):
-                file_list = []
-                for dir_path, dir_name, file_name in os.walk(directory):
-                    for name in file_name:
-                        file_list.append(os.path.join(dir_path, name))
-                return file_list
         
-        #filters files in file list based on the pattern that is passed in job
-        def filter_files(file_list:list, pattern:str):
-            '''return an auto appended list of string, for strings in
-               file_list ONLY if re.search(pattern, x)(this searches for
-               the provided params(pattern, x)'''
-            if isinstance(pattern, str):
-                return [x for x in file_list if re.search(rf"{pattern}", x)] 
-            return file_list 
-        file_list = iterate_file_list(directory)
-        return filter_files(file_list, pattern)
-    
-########################################################################   
-    def make_clean_csv_dir(self, dir_path:str) -> str:
-            '''this will both make a new path and generate a usable str token'''
-            '''pass in the desired path of the folder clean_csv as dir_path so
-            path=make_clean_csv_dir...!'''
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path) 
-                return dir_path
-            else:
-                os.rmdir(dir_path)
-                os.makedirs(dir_path)
-                return dir_path
-  
-  
+########################################################################    
     def clean_df_to_csv(self, df:DataFrame, project_dir:str, file_name:str, is_spark:bool):
         def pd_2_csv(df, file_name):
             df1 = df.toPandas()
@@ -102,6 +69,7 @@ class RoseSpark:
                  .option("header", "true").save(file_name) if is_spark == True\
                  else pd_2_csv(df, file_name) 
                  
+########################################################################                   
     def clean_file_names(self, project_dir, file_name): 
         def generate_raw_file_name(project_dir:str, file_name:str) -> str:
             return os.listdir(f"{project_dir}/{file_name}")[0]
@@ -119,13 +87,8 @@ class RoseSpark:
         raw_file_name = generate_raw_file_name(project_dir, file_name)
         print(str(raw_file_name))
         return rename_files(raw_file_name, "clean_student_df.csv")
-        
     
 ########################################################################    
-    
-    
-        
-########################################################################  
 
 #READ DATA FOR PREPROCESSING
     def fetch_read_csv(self, spark:SparkSession, file_dirpath:str, file_name:str) -> DataFrame:
@@ -136,3 +99,4 @@ class RoseSpark:
             df.show(2)
             return df 
 ########################################################################  
+
