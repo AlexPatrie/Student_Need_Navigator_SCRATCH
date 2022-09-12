@@ -4,11 +4,7 @@ from time import asctime
 
 '''This script represents the actions associated with the job of preprocessing'''
 
-'''
-    WHAT ARE SOME OF THE IMPORTS WE CAN USE HERE?:
-        text blob(sentiment)
-        Mlib oneHot
-'''
+
 
 
 """LOGGING BLOCK"""
