@@ -4,6 +4,12 @@ from time import asctime
 
 '''This script represents the actions associated with the job of preprocessing'''
 
+'''
+    WHAT ARE SOME OF THE IMPORTS WE CAN USE HERE?:
+        text blob(sentiment)
+        Mlib oneHot
+'''
+
 
 """LOGGING BLOCK"""
 project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,16 +24,18 @@ sys.path.insert(1, project_dir)
 from spark_class import RoseSpark
 from pyspark.sql import SparkSession
 from pyspark.sql.dataframe import DataFrame 
-import pandas as pd 
-import typing 
+from pyspark.ml.linalg import Vectors
+from pyspark.ml.feature import OneHotEncoder, StringIndexer, Tokenizer, Word2Vec
+
 
 """MAIN EXECUTABLE FUNCTION THAT HOUSES JOB ACTIONS"""
 def main_preprocessing(project_dir:str) -> None:
     conf = open_config(f"{project_dir}/config/config.json")
     rose = spark_start(conf)#<--Spark Cursor
-    clean_students_df = extract_df(rose, project_dir, -1)
-    clean_students_df.show()
-    #show_dfs(rose, project_dir)
+    clean_df0 = fetch_df_from_dir(rose, project_dir, -1)
+    #show_dfs_in_dir(rose, project_dir)
+    clean_df1 = add_student_id(clean_df0, rose)
+    clean_df1.printSchema()
     rose.stop()
 
 
@@ -46,24 +54,36 @@ def spark_stop(spark:SparkSession) -> None:
 
 """1. READ IN FRESHLY-WRITTEN CSV TO SPARK DF FROM !DEDICATED(explicit)! CLEAN DIR"""
 #I like to order args by order of appearance within creation of funcs!
-def show_dfs(spark:SparkSession, file_dirpath:str) -> DataFrame:
+def show_dfs_in_dir(spark:SparkSession, file_dirpath:str) -> DataFrame:
     if os.path.exists(file_dirpath):
         #here we recursively target the file name as a string and extract it from os.walk
-        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[11]):
+        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[10]):
             i = 0 
             while i < len(filenames): 
                 RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, filenames[i])
                 i += 1
 
-def extract_df(spark:SparkSession, file_dirpath:str, file_index:int) -> DataFrame:
+#I wanted to be explicit about the naming of arg "file_index" so that it is not ambiguous like "i"
+def fetch_df_from_dir(spark:SparkSession, file_dirpath:str, file_index:int) -> DataFrame:
     if os.path.exists(file_dirpath):
-        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[11]):
-            return RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, filenames[file_index])
-        
-"""ADD PREPROCESSING JOBS NOW"""                
-        
+        #here we iterate over the dedicated csv dir and specify the index position(10)
+        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[10]):
+            return RoseSpark(config={}).fetch_read_csv(spark, 
+                                                       file_dirpath, 
+                                                       filenames[file_index])#<-going to specify -1 for LAST file in dir
+
+#I would like to add a col 'student_id' for preprocessing and drop name col
+def add_student_id(df:DataFrame, spark:SparkSession):
+    return RoseSpark(config={}).add_student_id(df, spark) 
+       
+"""ADD PREPROCESSING JOBS NOW:
+    we must vectorize categorical data and normalize numerical data"""                
+
+
+
+
+
 
 """RUN MAIN FUNCTION"""  
-
 if __name__ == "__main__":
     main_preprocessing(project_dir)

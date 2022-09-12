@@ -48,6 +48,7 @@ def main_data_intake(project_dir:str) -> None:
     clean_df = clean_student_data(rose, df) 
     #here is where we write our df to a csv into a dedicated dir that is created
     clean_df_to_csv(df=clean_df, project_dir=project_dir, file_name=f"cleaned_students{THIS_WEEK}", is_spark=False)#<-filename to be written
+    clean_df_to_csv(df=clean_df, project_dir=project_dir, file_name=f"cleaned_students_test", is_spark=False)
     #clean_csv_name(project_dir, "cleaned_students")
     
     rose.stop()
@@ -71,6 +72,7 @@ def define_pg_conn() -> str:
                                                      cd.hostname, cd.port_id, cd.db_name)
 
 def read_pd_to_spark_df(spark, sql, conn):
+    '''read in a "raw" dataset as a spark df via Pandas'''
     return RoseSpark(config={}).read_pd_to_spark_df(spark, sql, conn)
 
 #here we have a function that cleans null and casts correct dtypes with spark
@@ -110,8 +112,10 @@ def clean_df_to_csv(df:DataFrame, project_dir:str, file_name:str, is_spark:bool)
     
 def clean_csv_name(project_dir, file_name):
     return RoseSpark(config={}).clean_file_names(project_dir, file_name)
-    
 
+
+if __name__ == '__main__':
+    main_data_intake(project_dir)
 #export to dedicated dir for sending to another db as a table that will 
     #soon have the model's predictions appended on to it!  
 

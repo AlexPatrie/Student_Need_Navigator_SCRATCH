@@ -4,6 +4,7 @@ from typing import Callable, Optional
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql import SparkSession
 from pyspark.context import SparkContext
+from pyspark.sql.functions import lit
 
 class RoseSpark:
     
@@ -61,7 +62,6 @@ class RoseSpark:
     def read_pd_to_spark_df(self, spark, sql, conn):
         df1 = pd.read_sql(sql, con=conn)
         df2 = spark.createDataFrame(df1)
-        df2.printSchema()
         return df2
         
 ########################################################################   
@@ -92,20 +92,41 @@ class RoseSpark:
                 os.remove(old_file_name)
                 os.rename(old_file_name, new_file_name)
         
-        
         raw_file_name = generate_raw_file_name(project_dir, file_name)
         print(str(raw_file_name))
         return rename_files(raw_file_name, "clean_student_df.csv")
     
 ########################################################################    
 
-#READ DATA FOR PREPROCESSING
+#PREPROCESSING METHODS
+
+    #read single file for preprocessing
     def fetch_read_csv(self, spark:SparkSession, file_dirpath:str, file_name:str) -> DataFrame:
         if os.path.exists(file_dirpath):
-            df = spark.read.format('csv').option('header', 'true')\
+            df0 = spark.read.format('csv').option('header', 'true')\
                            .option('inferSchema', 'true').load(f"{file_dirpath}/clean_csv/{file_name}")
-            df.printSchema()
-            df.show(2)
-            return df 
+            df1 = df0.drop(df0.columns[0])#<-drop col '_c0' that is created when spark reads a csv(0th index)
+            return df1 
+        
+    #we are going to use pyspark .lit() to insert new col with literals    
+    def add_student_id(self, df:DataFrame, spark:SparkSession):
+        from pyspark.sql.functions import monotonically_increasing_id 
+        df0 = df.withColumn("student_id", monotonically_increasing_id())\
+                .select("*")
+
+        '''I want to rearrange the order of the cols so that the target(y aka Label)
+           is at position -1'''
+        def rearrange_cols(df, spark):
+            df.createOrReplaceTempView("d")
+            df0 = spark\
+                    .sql("select student_id, instrument, lesson_location, \
+                                 contact, time_of_lesson, lesson_day, \
+                                 age, keyword_comments, status, lesson_material  \
+                          from d")
+            return df0 
+        
+        return rearrange_cols(df0, spark)
+        
+        
 ########################################################################  
 
