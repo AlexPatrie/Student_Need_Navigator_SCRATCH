@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql import SparkSession
 from pyspark.context import SparkContext
-from pyspark.sql.functions import lit
+from pyspark.sql.functions import lit, col 
 
 class RoseSpark:
     
@@ -128,5 +128,10 @@ class RoseSpark:
         return rearrange_cols(df0, spark)
         
         
+    def normalize_numerical_features(self, df, spark):
+        df.createOrReplaceTempView("d")
+        df0 = spark.sql("select age/max(age) as normalized_age from d")
+        df0.show()
+        return df0
 ########################################################################  
 
