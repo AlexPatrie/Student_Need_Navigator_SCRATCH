@@ -1,4 +1,5 @@
-import os, sys 
+import os, sys
+from re import T 
 import logging
 from time import asctime
 
@@ -29,11 +30,12 @@ from pyspark.ml.feature import OneHotEncoder, StringIndexer, Tokenizer, Word2Vec
 def main_preprocessing(project_dir:str) -> None:
     conf = open_config(f"{project_dir}/config/config.json")
     rose = spark_start(conf)#<--Spark Cursor
-    clean_df0 = fetch_read_csv(rose, project_dir, -1)
+    trans_df0 = fetch_read_csv(rose, project_dir, -1) #<-Spark DF
     #show_dfs_in_dir(rose, project_dir)
-    clean_df1 = add_student_id(clean_df0, rose)
-    clean_df1.printSchema()
-    normalize_numerical_features(clean_df1, rose)
+    trans_df1 = add_student_id(trans_df0, rose) #<-Spark DF
+    trans_df2 = normalize_numerical_features(trans_df1, rose) #<-Pd DF
+    trans_df3 = oneHot_columns(trans_df2, rose)
+    trans_df4 = vectorize_text(trans_df3, rose, "keyword_comments")
     rose.stop()
 
 
@@ -49,7 +51,6 @@ def spark_start(conf: dict) -> SparkSession:
 def spark_stop(spark:SparkSession) -> None:
     spark.stop() if isinstance(spark, SparkSession) else None 
     
-
 """1. READ IN FRESHLY-WRITTEN CSV TO SPARK DF FROM !DEDICATED(explicit)! CLEAN DIR"""
 #I like to order args by order of appearance within creation of funcs!
 def show_dfs_in_dir(spark:SparkSession, file_dirpath:str) -> DataFrame:
@@ -70,18 +71,29 @@ def fetch_read_csv(spark:SparkSession, file_dirpath:str, file_index:int) -> Data
                                                        file_dirpath, 
                                                        filenames[file_index])#<-going to specify -1 for LAST file in dir
 
-#I would like to add a col 'student_id' for preprocessing and drop name col
-def add_student_id(df:DataFrame, spark:SparkSession):
-    return RoseSpark(config={}).add_student_id(df, spark) 
-       
-"""ADD PREPROCESSING JOBS NOW:
-    we must vectorize categorical data and normalize numerical data"""                
+'''PREPROCESSING JOBS(origin: fetch_read_csv):
+    add_student_id->normalized_numerical_features->oneHot_columns->vectorize_text==>preprocessed data'''
 
-def normalize_numerical_features(df:DataFrame, spark:SparkSession):
+def add_student_id(df:DataFrame, spark:SparkSession):
+    '''add a student_id in place of name for preprocessing/drop name'''
+    return RoseSpark(config={}).add_student_id(df, spark) 
+
+def normalize_numerical_features(df, spark:SparkSession):
+    '''here numerical features are divided by the .max() of their respective cols/drop original'''
     return RoseSpark(config={}).normalize_numerical_features(df, spark)
 
-
-
+def oneHot_columns(df, spark:SparkSession):
+    '''here we convert categorical feature values into oneHot Vectors'''
+    rose = RoseSpark(config={})
+    df0 = rose.oneHot_column(df, spark, "instrument")#<-lets call each col individually HERE
+    df1 = rose.oneHot_column(df0, spark, "lesson_location")
+    df2 = rose.oneHot_column(df1, spark, "contact")
+    df3 = rose.oneHot_column(df2, spark, "lesson_day")
+    return df3
+    
+def vectorize_text(df, spark, col):
+    '''use NLP to convert text feature values into vectors'''
+    return RoseSpark(config={}).vectorize_text(df, spark, col)
 
 """RUN MAIN FUNCTION"""  
 if __name__ == "__main__":

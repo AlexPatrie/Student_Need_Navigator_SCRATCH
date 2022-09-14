@@ -4,7 +4,8 @@ from typing import Callable, Optional
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql import SparkSession
 from pyspark.context import SparkContext
-from pyspark.sql.functions import lit, col 
+from pyspark.sql.functions import lit, col
+
 
 class RoseSpark:
     
@@ -104,16 +105,17 @@ class RoseSpark:
     def fetch_read_csv(self, spark:SparkSession, file_dirpath:str, file_name:str) -> DataFrame:
         if os.path.exists(file_dirpath):
             df0 = spark.read.format('csv').option('header', 'true')\
-                           .option('inferSchema', 'true').load(f"{file_dirpath}/clean_csv/{file_name}")
+                            .option('inferSchema', 'true').load(f"{file_dirpath}/clean_csv/{file_name}")
             df1 = df0.drop(df0.columns[0])#<-drop col '_c0' that is created when spark reads a csv(0th index)
             return df1 
         
     #we are going to use pyspark .lit() to insert new col with literals    
     def add_student_id(self, df:DataFrame, spark:SparkSession):
-        from pyspark.sql.functions import monotonically_increasing_id 
-        df0 = df.withColumn("student_id", monotonically_increasing_id())\
-                .select("*")
-
+        def create_id(df):
+            from pyspark.sql.functions import monotonically_increasing_id 
+            df0 = df.select("*").withColumn("student_id", monotonically_increasing_id())
+            return df0
+        
         '''I want to rearrange the order of the cols so that the target(y aka Label)
            is at position -1'''
         def rearrange_cols(df, spark):
@@ -125,13 +127,61 @@ class RoseSpark:
                           from d")
             return df0 
         
+        df0 = create_id(df)
         return rearrange_cols(df0, spark)
         
         
     def normalize_numerical_features(self, df, spark):
-        df.createOrReplaceTempView("d")
-        df0 = spark.sql("select age/max(age) as normalized_age from d")
-        df0.show()
-        return df0
+        #convert to pandas for normalization
+        df0 = df.toPandas()
+        #create normalized cols (colValue/colValue.max())
+        df0['normalized_time_of_lesson'] = df0['time_of_lesson'] / df0['time_of_lesson'].max()
+        df0['normalized_age'] = df0['age'] / df0['age'].max()
+        df0['normalized_status'] = df0['status'] / df0['status'].max()
+        #drop original unnormalized cols
+        df1 = df0.drop(['time_of_lesson', 'age', 'status'], axis=1)
+        #map out replacement for specified character in specified column so that there are only NON-zero values
+        df1['normalized_status'].replace({0.0: 0.1}, inplace=True)
+        df2 = spark.createDataFrame(df1)
+        return df2
+    
+    
 ########################################################################  
 
+    def oneHot_column(self, df, spark, column:str): #<-column is that which will be oneHotted
+        from pyspark.ml.feature import OneHotEncoder, StringIndexer 
+        df.createOrReplaceTempView("d")
+        df1 = spark.sql("select * from d") #<-includes ALL cols
+        indexer = StringIndexer(inputCol=f"{column}", outputCol=f"{column}_index")
+        df2 = indexer.fit(df1).transform(df1)
+        ohe = OneHotEncoder(inputCol=f"{column}_index", outputCol=f"{column}_ohv")
+        df3 = ohe.fit(df2).transform(df2)
+        df4 = df3.drop(f"{column}", f"{column}_index")  
+        #make sure to rearragnge cols with feature at the end!
+        return df4
+        
+    def vectorize_text(self, df, spark, col):
+        from sklearn.feature_extraction.text import CountVectorizer
+        import pyspark.sql.functions as f
+        import numpy as np
+        
+        vectorizer = CountVectorizer()
+        
+        #collect col values
+        col_array = [row[0] for row in df.select(col).collect()]
+        
+        #simple method to change col values without converting to pd
+        i = 0
+        while i < len(col_array):
+            if col_array[i] == None:
+                col_array[i] = 'no entry added'
+            i += 1
+            
+        X = vectorizer.fit_transform(col_array)
+        vectorizer.get_feature_names_out()
+        y = X.toarray()
+        
+        df0 = df.toPandas()
+        #df0['keyword_vec'] = y.flatten()
+        print(y)
+        print(y.shape) #WE SHOULD TOKENIZE AND RESHAPE BEFORE VECTORIZEING!!
