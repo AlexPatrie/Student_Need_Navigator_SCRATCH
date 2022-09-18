@@ -7,6 +7,7 @@ from pyspark.context import SparkContext
 from pyspark.sql.functions import lit, col
 
 
+
 class RoseSpark:
     
     def __init__(self, config):
@@ -160,28 +161,75 @@ class RoseSpark:
         #make sure to rearragnge cols with feature at the end!
         return df4
         
-    def vectorize_text(self, df, spark, col):
-        from sklearn.feature_extraction.text import CountVectorizer
+    def vectorize_text(self, df, spark, column):
         import pyspark.sql.functions as f
         import numpy as np
+        import nltk 
+        #nltk.download('wordnet')
+        #nltk.download('omw-1.4')
+        from pyspark.ml.linalg import Vectors
+        from pyspark.ml.feature import RegexTokenizer, Word2Vec, HashingTF, StringIndexer
+        from pyspark.sql.types import StringType
+    
+        def clean_None_vals(df):
+            df0 = df.toPandas()
+            df1 = df0.replace({None: 'no entry added'})
+            return df1
         
-        vectorizer = CountVectorizer()
-        
-        #collect col values
-        col_array = [row[0] for row in df.select(col).collect()]
-        
-        #simple method to change col values without converting to pd
-        i = 0
-        while i < len(col_array):
-            if col_array[i] == None:
-                col_array[i] = 'no entry added'
-            i += 1
+        def tokenize(df, column):
+            df0 = spark.createDataFrame(df)
             
-        X = vectorizer.fit_transform(col_array)
-        vectorizer.get_feature_names_out()
-        y = X.toarray()
+            tokenizer = RegexTokenizer(outputCol=f"{column}_tokenized")
+            tokenizer.setInputCol(column)
+            df1 = tokenizer.transform(df0)
+            
+            hashingTF = HashingTF(inputCol=tokenizer.getOutputCol(), outputCol=f"{column}_features")
+            hashingTF.setNumFeatures(24) 
+            df2 = hashingTF.transform(df1)
+            #capture terms as a list(shape 8,2)
+            term_list = df2.select(f.collect_list(f"{column}_tokenized")).first()[0]
+            feature_list = df2.select(f.collect_list(f"{column}_features")).first()[0]
+            '''term_list and feature_list are the same length!, thus zip(tl, fl)'''
+            term_map = list(zip(term_list, feature_list)) 
+            a = str(term_list).replace('[', '').replace(']', '')
+            i = 0 
+            while i < len(term_list):
+                for term in a:
+                    if term.endswith(','): 
+                        term.replace(',', '')
+                        print(term)
+                    l = hashingTF.indexOf(term)
+                    print(f"term index: {l}")
+                i += 1
+            #i want to map term_list to kw_comments_tokenized
+            #print(f"Index of terms: {hashingTF.indexOf(x)}")
+            return df2
         
-        df0 = df.toPandas()
-        #df0['keyword_vec'] = y.flatten()
-        print(y)
-        print(y.shape) #WE SHOULD TOKENIZE AND RESHAPE BEFORE VECTORIZEING!!
+        def add_str_indexer(column, df):
+            stringIndexer = StringIndexer(inputCol=column, 
+                                          outputCol=f"indexed_{column}",
+                                          stringOrderType="frequencyDesc")
+            model = stringIndexer.fit(df)
+            df0 = model.transform(df)
+            return df0
+        
+        def vectorize(column, df):
+            word2Vec = Word2Vec(vectorSize=8, 
+                                seed=42, 
+                                minCount=1,
+                                inputCol=f"{column}_tokenized", 
+                                outputCol=f"{column}_vectorized")
+            df1 = word2Vec.fit(df)
+            df2 = df1.getVectors()
+            return df2
+        
+        df0 = clean_None_vals(df)
+        df1 = tokenize(df0, column)
+        df2 = add_str_indexer(column, df1)
+        df2.drop(column)
+        df2.show(vertical=True, truncate=False)
+        #df3 = vectorize(column, df2)
+        return df2
+        #arr = list([row[0] for row in df1.select("features").collect()])
+        
+        

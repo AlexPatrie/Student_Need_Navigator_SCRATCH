@@ -7,8 +7,6 @@ from time import asctime
 '''This script represents the actions associated with the job of preprocessing'''
 
 
-
-
 """LOGGING BLOCK"""
 project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG_FILE = f"{project_dir}/logs/job-{os.path.basename(__file__)}.log"
@@ -35,7 +33,7 @@ def main_preprocessing(project_dir:str) -> None:
     trans_df1 = add_student_id(trans_df0, rose) #<-Spark DF
     trans_df2 = normalize_numerical_features(trans_df1, rose) #<-Pd DF
     trans_df3 = oneHot_columns(trans_df2, rose)
-    trans_df4 = vectorize_text(trans_df3, rose, "keyword_comments")
+    trans_df4 = vectorize_text(trans_df3, rose, "keyword_comments")#<-do this for several cols
     rose.stop()
 
 
