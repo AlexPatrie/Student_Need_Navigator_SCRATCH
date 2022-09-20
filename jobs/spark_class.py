@@ -109,6 +109,8 @@ class RoseSpark:
                             .option('inferSchema', 'true').load(f"{file_dirpath}/clean_csv/{file_name}")
             df1 = df0.drop(df0.columns[0])#<-drop col '_c0' that is created when spark reads a csv(0th index)
             return df1 
+        else:
+            print('path no exist!')
         
     #we are going to use pyspark .lit() to insert new col with literals    
     def add_student_id(self, df:DataFrame, spark:SparkSession):
@@ -169,7 +171,7 @@ class RoseSpark:
         #nltk.download('omw-1.4')
         from pyspark.ml.linalg import Vectors
         from pyspark.ml.feature import RegexTokenizer, Word2Vec, HashingTF, StringIndexer
-        from pyspark.sql.types import StringType
+        from pyspark.sql.types import ArrayType, StringType, StructField, StructType
     
         def clean_None_vals(df):
             df0 = df.toPandas()
@@ -191,27 +193,48 @@ class RoseSpark:
             feature_list = df2.select(f.collect_list(f"{column}_features")).first()[0]
             '''term_list and feature_list are the same length!, thus zip(tl, fl)'''
             term_map = list(zip(term_list, feature_list)) 
-            a = str(term_list).replace('[', '').replace(']', '')
-            i = 0 
-            while i < len(term_list):
-                for term in a:
-                    if term.endswith(','): 
-                        term.replace(',', '')
-                        print(term)
-                    l = hashingTF.indexOf(term)
-                    print(f"term index: {l}")
-                i += 1
-            #i want to map term_list to kw_comments_tokenized
-            #print(f"Index of terms: {hashingTF.indexOf(x)}")
+            
+            def terms_to_tf(term_list, hashingTF):
+                a = str(term_list).replace('[', '').replace(']', '')
+                i = 0
+                tf_list = []
+                for entries in term_list:
+                    l = [hashingTF.indexOf(x) for x in term_list[i]]
+                    tf_list.append(l)
+                    i += 1
+                return tf_list
+            
+            tf_list = terms_to_tf(term_list, hashingTF)
+            #i want to map term_list tokw_comments_tokenized
+            #use sql?...ie select distinct column, count(distinct column) and map these two?
             return df2
         
         def add_str_indexer(column, df):
+            #indexer on whole entry and df
             stringIndexer = StringIndexer(inputCol=column, 
                                           outputCol=f"indexed_{column}",
                                           stringOrderType="frequencyDesc")
-            model = stringIndexer.fit(df)
-            df0 = model.transform(df)
-            return df0
+            model1 = stringIndexer.fit(df)
+            df0 = model1.transform(df) #<-sparkDF
+            #indexer on just term_list....
+            #...these are the tokenized keyword commends in 2d array
+            '''lets try to keep spark df and use sql to get distinct values'''
+            df0.createOrReplaceTempView("TAB")
+            df1 = spark.sql(f"SELECT DISTINCT keyword_comments_tokenized FROM TAB")
+            ##below is a list of a df that has all the unique vals
+            term_list = df1.select(f.collect_list("keyword_comments_tokenized")).first()[0]
+            
+            #this will automatically return map for entry i in termlist, so 0
+            def get_entry_index(term_list):
+                i = 0 
+                y = {}
+                for token in term_list[i]:
+                    y[i] = token
+                    i += 1
+                return y
+            
+            y = get_entry_index(term_list)
+            print(y)
         
         def vectorize(column, df):
             word2Vec = Word2Vec(vectorSize=8, 
@@ -221,15 +244,15 @@ class RoseSpark:
                                 outputCol=f"{column}_vectorized")
             df1 = word2Vec.fit(df)
             df2 = df1.getVectors()
+            print(word2Vec.getNumPartitions())
+            print('*********')
             return df2
         
         df0 = clean_None_vals(df)
         df1 = tokenize(df0, column)
         df2 = add_str_indexer(column, df1)
-        df2.drop(column)
-        df2.show(vertical=True, truncate=False)
+        #df2.drop(column)
         #df3 = vectorize(column, df2)
         return df2
-        #arr = list([row[0] for row in df1.select("features").collect()])
         
         

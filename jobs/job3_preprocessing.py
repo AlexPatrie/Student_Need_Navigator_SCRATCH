@@ -64,7 +64,7 @@ def show_dfs_in_dir(spark:SparkSession, file_dirpath:str) -> DataFrame:
 def fetch_read_csv(spark:SparkSession, file_dirpath:str, file_index:int) -> DataFrame:
     if os.path.exists(file_dirpath):
         #here we iterate over the dedicated csv dir and specify the index position(10)
-        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[8]):
+        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[9]):
             return RoseSpark(config={}).fetch_read_csv(spark, 
                                                        file_dirpath, 
                                                        filenames[file_index])#<-going to specify -1 for LAST file in dir
