@@ -102,7 +102,7 @@ def vectorize_text(df, spark):
 def preprocessed_df_2_csv(df, file_name):
     '''here is a job action that will save the preprocessed df as a csv in the same clean_students dir!'''
     df1 = df.toPandas() 
-    df2 = df1.to_csv(f'{project_dir}/clean_csv/{file_name}.csv')  
+    df2 = df1.to_csv(f'{project_dir}/clean_csv/{file_name}.csv', index=False)  
     print(f"{file_name}.csv CREATED!")
     return df2
 
