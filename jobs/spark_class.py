@@ -219,12 +219,12 @@ class RoseSpark:
         #drop irrelevant
         df3 = df2.drop([column, f"{column}_tokenized"], axis=1)
         #normalize string indicies between 0-1
-        df3[f"normalized_{column}_vect"] = df3[f"{column}_vect"] / df3[f"{column}_vect"].max()
+        #df3[f"normalized_{column}_vect"] = df3[f"{column}_vect"] / df3[f"{column}_vect"].max()
         #drop irrelevent
-        df4 = df3.drop([f"{column}_vect"])
+        #df4 = df3.drop([f"{column}_vect"])
         #convert to spark for reiteration (spark in -> spark out)
-        df5 = spark.createDataFrame(df4)
+        df5 = spark.createDataFrame(df3)
         return df5
-        ###END VECTORIZE TEXT############
+        ###END VECTORIZE TEXT############ 
         
         
