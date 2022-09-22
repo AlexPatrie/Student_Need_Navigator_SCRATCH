@@ -165,13 +165,7 @@ class RoseSpark:
         
     def vectorize_text(self, df, spark, column):
         import pyspark.sql.functions as f
-        import numpy as np
-        import nltk 
-        #nltk.download('wordnet')
-        #nltk.download('omw-1.4')
-        from pyspark.ml.linalg import Vectors
-        from pyspark.ml.feature import RegexTokenizer, Word2Vec, HashingTF, StringIndexer
-        from pyspark.sql.types import ArrayType, StringType, StructField, StructType
+        from pyspark.ml.feature import RegexTokenizer, HashingTF
     
         def clean_None_vals(df):
             df0 = df.toPandas()

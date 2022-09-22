@@ -20,9 +20,6 @@ sys.path.insert(1, project_dir)
 from spark_class import RoseSpark
 from pyspark.sql import SparkSession
 from pyspark.sql.dataframe import DataFrame 
-from pyspark.ml.linalg import Vectors
-from pyspark.ml.feature import OneHotEncoder, StringIndexer, Tokenizer, Word2Vec
-
 
 """MAIN EXECUTABLE FUNCTION THAT HOUSES JOB ACTIONS"""
 def main_preprocessing(project_dir:str) -> None:
@@ -49,7 +46,6 @@ def spark_start(conf: dict) -> SparkSession:
 def spark_stop(spark:SparkSession) -> None:
     spark.stop() if isinstance(spark, SparkSession) else None 
     
-"""1. READ IN FRESHLY-WRITTEN CSV TO SPARK DF FROM !DEDICATED(explicit)! CLEAN DIR"""
 #I like to order args by order of appearance within creation of funcs!
 def show_dfs_in_dir(spark:SparkSession, file_dirpath:str) -> DataFrame:
     if os.path.exists(file_dirpath):
@@ -60,17 +56,18 @@ def show_dfs_in_dir(spark:SparkSession, file_dirpath:str) -> DataFrame:
                 RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, filenames[i])
                 i += 1
 
+"""1. READ IN FRESHLY-WRITTEN CSV TO SPARK DF FROM !DEDICATED(explicit)! CLEAN DIR"""
 #I wanted to be explicit about the naming of arg "file_index" so that it is not ambiguous like "i"
 def fetch_read_csv(spark:SparkSession, file_dirpath:str, file_index:int) -> DataFrame:
     if os.path.exists(file_dirpath):
-        #here we iterate over the dedicated csv dir and specify the index position(10)
-        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[9]):
+        #here we iterate over the dedicated csv dir and specify the index position(8)'''***MUST CHANGE IF DIR STRUCTURE CHANGES!***'''
+        for dirpath, dirnames, filenames in os.walk(os.listdir(file_dirpath)[8]):
             return RoseSpark(config={}).fetch_read_csv(spark, 
                                                        file_dirpath, 
                                                        filenames[file_index])#<-going to specify -1 for LAST file in dir
 
-'''PREPROCESSING JOBS(origin: fetch_read_csv):
-    add_student_id->normalized_numerical_features->oneHot_columns->vectorize_text==>preprocessed data'''
+"""2.PREPROCESSING JOBS(origin: fetch_read_csv):
+    add_student_id->normalized_numerical_features->oneHot_columns->vectorize_text==>preprocessed data"""
 
 def add_student_id(df:DataFrame, spark:SparkSession):
     '''add a student_id in place of name for preprocessing/drop name'''
@@ -90,7 +87,8 @@ def oneHot_columns(df, spark:SparkSession):
     return df3
     
 def vectorize_text(df, spark, col):
-    '''use NLP to convert text feature values into vectors'''
+    '''here we convert a purely categorical set of str features into arrays of n
+       width where n is the number of rows'''
     return RoseSpark(config={}).vectorize_text(df, spark, col)
 
 """RUN MAIN FUNCTION"""  
