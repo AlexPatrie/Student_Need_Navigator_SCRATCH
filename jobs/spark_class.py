@@ -188,40 +188,21 @@ class RoseSpark:
             hashingTF = HashingTF(inputCol=tokenizer.getOutputCol(), outputCol=f"{column}_features")
             hashingTF.setNumFeatures(24) 
             df2 = hashingTF.transform(df1)
-            #capture terms as a list(shape 8,2)
-            term_list = df2.select(f.collect_list(f"{column}_tokenized")).first()[0]
-            feature_list = df2.select(f.collect_list(f"{column}_features")).first()[0]
-            '''term_list and feature_list are the same length!, thus zip(tl, fl)'''
-            term_map = list(zip(term_list, feature_list)) 
-            
-            def terms_to_tf(term_list, hashingTF):
-                a = str(term_list).replace('[', '').replace(']', '')
-                i = 0
-                tf_list = []
-                for entries in term_list:
-                    l = [hashingTF.indexOf(x) for x in term_list[i]]
-                    tf_list.append(l)
-                    i += 1
-                return tf_list
-            
-            tf_list = terms_to_tf(term_list, hashingTF)
             #i want to map term_list tokw_comments_tokenized
             #use sql?...ie select distinct column, count(distinct column) and map these two?
             return df2
         
-        def add_str_index(column, df):
-            import nltk 
-            from nltk.corpus import stopwords 
+        def add_str_index(column, df): 
             #...these are the tokenized keyword comments in 2d array
             '''lets try to keep spark df and use sql to get distinct values'''
             df.createOrReplaceTempView("TAB")
             df1 = spark.sql(f"SELECT DISTINCT {column}_tokenized FROM TAB")
+            #raw list with duplicate values
+            term_list_raw = df.select(f.collect_list(f"{column}_tokenized")).first()[0]
             ##below is a python-list of a df that has all the unique vals
             term_list = df1.select(f.collect_list(f"{column}_tokenized")).first()[0]
             #flatten the list without having to use numpy
             flat_list = [item for sublist in term_list for item in sublist]
-            #list comprehension to append (index,entry) to a list...map of tuples
-            map1 = [(x, y) for x, y in enumerate(flat_list)]
             #map as a dictionary...format => {term:index}
             map2 = dict([(y,x+1) for x,y in enumerate(sorted(set(flat_list)))])
             
@@ -230,22 +211,24 @@ class RoseSpark:
                 for term in term_list[i]:
                     y.append(map2[term])
                     i += 1
-                #y2 = [map2[x] for x in term_list[i]]
                 return y
             
-            y_2 = []
-            for n in range(len(term_list)):
-                y_2.append(get_vector(term_list, map2, n))
-                           
-            y_0 = get_vector(term_list, map2, 0)
-            y_1 = get_vector(term_list, map2, 1)
-            print(f"vects: {y_2}")
+            #returns index vectors of given col!
+            def realize(term_list_raw):
+                y = []
+                for n in range(len(term_list_raw)):
+                    y.append(get_vector(term_list_raw, map2, n))
+                print(f"\nvects: {y}\n")
             
-              
-              
+            #right now, just returning an array of converted terms, must add to df!
+            return realize(term_list_raw)
+            ###END STR INDEXER###
+                 
         df0 = clean_None_vals(df)
         df1 = tokenize(df0, column)
-        df2 = add_str_index(column, df1)
+        df1.show(vertical=True)
+        df2 = add_str_index(column, df1)#<-right now, df2 is JUST the array
         return df2
+        ###END VECTORIZE TEXT############
         
         
