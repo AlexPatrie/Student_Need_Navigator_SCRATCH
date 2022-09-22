@@ -192,9 +192,9 @@ class RoseSpark:
             #use sql?...ie select distinct column, count(distinct column) and map these two?
             return df2
         
+        '''outputs a pandas df with vectorized column!'''
         def add_str_index(column, df): 
             #...these are the tokenized keyword comments in 2d array
-            '''lets try to keep spark df and use sql to get distinct values'''
             df.createOrReplaceTempView("TAB")
             df1 = spark.sql(f"SELECT DISTINCT {column}_tokenized FROM TAB")
             #raw list with duplicate values
@@ -206,6 +206,8 @@ class RoseSpark:
             #map as a dictionary...format => {term:index}
             map2 = dict([(y,x+1) for x,y in enumerate(sorted(set(flat_list)))])
             
+            '''#1'''
+            #matches the df col values with the values from map and extracts
             def get_vector(term_list, map2, i):
                 y = []
                 for term in term_list[i]:
@@ -213,21 +215,24 @@ class RoseSpark:
                     i += 1
                 return y
             
-            #returns index vectors of given col!
-            def realize(term_list_raw):
+            '''#2'''
+            #returns index vectors of given col as a list!!
+            def realize_list(term_list_raw):
                 y = []
                 for n in range(len(term_list_raw)):
                     y.append(get_vector(term_list_raw, map2, n))
-                print(f"\nvects: {y}\n")
-            
-            #right now, just returning an array of converted terms, must add to df!
-            return realize(term_list_raw)
+                return y 
+                
+            term_vectors = realize_list(term_list_raw)#<-2d list of vectorized str terms for given col
+            df2 = df.toPandas()
+            df2[f"{column}_vect"] = term_vectors
+            return df2
             ###END STR INDEXER###
                  
         df0 = clean_None_vals(df)
         df1 = tokenize(df0, column)
-        df1.show(vertical=True)
-        df2 = add_str_index(column, df1)#<-right now, df2 is JUST the array
+        df2 = add_str_index(column, df1)#<-pandas df with new column
+        print(df2.head())
         return df2
         ###END VECTORIZE TEXT############
         
