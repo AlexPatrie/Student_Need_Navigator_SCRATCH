@@ -209,50 +209,43 @@ class RoseSpark:
             #use sql?...ie select distinct column, count(distinct column) and map these two?
             return df2
         
-        def add_str_indexer(column, df):
-            #indexer on whole entry and df
-            stringIndexer = StringIndexer(inputCol=column, 
-                                          outputCol=f"indexed_{column}",
-                                          stringOrderType="frequencyDesc")
-            model1 = stringIndexer.fit(df)
-            df0 = model1.transform(df) #<-sparkDF
-            #indexer on just term_list....
-            #...these are the tokenized keyword commends in 2d array
+        def add_str_index(column, df):
+            import nltk 
+            from nltk.corpus import stopwords 
+            #...these are the tokenized keyword comments in 2d array
             '''lets try to keep spark df and use sql to get distinct values'''
-            df0.createOrReplaceTempView("TAB")
-            df1 = spark.sql(f"SELECT DISTINCT keyword_comments_tokenized FROM TAB")
-            ##below is a list of a df that has all the unique vals
-            term_list = df1.select(f.collect_list("keyword_comments_tokenized")).first()[0]
+            df.createOrReplaceTempView("TAB")
+            df1 = spark.sql(f"SELECT DISTINCT {column}_tokenized FROM TAB")
+            ##below is a python-list of a df that has all the unique vals
+            term_list = df1.select(f.collect_list(f"{column}_tokenized")).first()[0]
+            #flatten the list without having to use numpy
+            flat_list = [item for sublist in term_list for item in sublist]
+            #list comprehension to append (index,entry) to a list...map of tuples
+            map1 = [(x, y) for x, y in enumerate(flat_list)]
+            #map as a dictionary...format => {term:index}
+            map2 = dict([(y,x+1) for x,y in enumerate(sorted(set(flat_list)))])
             
-            #this will automatically return map for entry i in termlist, so 0
-            def get_entry_index(term_list):
-                i = 0 
-                y = {}
-                for token in term_list[i]:
-                    y[i] = token
+            def get_vector(term_list, map2, i):
+                y = []
+                for term in term_list[i]:
+                    y.append(map2[term])
                     i += 1
+                #y2 = [map2[x] for x in term_list[i]]
                 return y
             
-            y = get_entry_index(term_list)
-            print(y)
-        
-        def vectorize(column, df):
-            word2Vec = Word2Vec(vectorSize=8, 
-                                seed=42, 
-                                minCount=1,
-                                inputCol=f"{column}_tokenized", 
-                                outputCol=f"{column}_vectorized")
-            df1 = word2Vec.fit(df)
-            df2 = df1.getVectors()
-            print(word2Vec.getNumPartitions())
-            print('*********')
-            return df2
-        
+            y_2 = []
+            for n in range(len(term_list)):
+                y_2.append(get_vector(term_list, map2, n))
+                           
+            y_0 = get_vector(term_list, map2, 0)
+            y_1 = get_vector(term_list, map2, 1)
+            print(f"vects: {y_2}")
+            
+              
+              
         df0 = clean_None_vals(df)
         df1 = tokenize(df0, column)
-        df2 = add_str_indexer(column, df1)
-        #df2.drop(column)
-        #df3 = vectorize(column, df2)
+        df2 = add_str_index(column, df1)
         return df2
         
         
