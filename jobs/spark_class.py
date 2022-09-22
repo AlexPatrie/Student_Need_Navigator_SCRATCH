@@ -1,11 +1,8 @@
 import json, os, re, sys
 import pandas as pd 
-from typing import Callable, Optional 
+from typing import Optional 
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql import SparkSession
-from pyspark.context import SparkContext
-from pyspark.sql.functions import lit, col
-
 
 
 class RoseSpark:
@@ -219,7 +216,7 @@ class RoseSpark:
         #drop irrelevant
         df3 = df2.drop([column, f"{column}_tokenized"], axis=1)
         #normalize string indicies between 0-1
-        #df3[f"normalized_{column}_vect"] = df3[f"{column}_vect"] / df3[f"{column}_vect"].max()
+        #df3[f"normalized_{column}_vect"] = df3[f"{column}_vect"].apply([lambda x: x / max(x) for x in df3[f"{column}_vect"]])
         #drop irrelevent
         #df4 = df3.drop([f"{column}_vect"])
         #convert to spark for reiteration (spark in -> spark out)

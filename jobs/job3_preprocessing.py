@@ -3,7 +3,6 @@ from re import T
 import logging
 from time import asctime
 
-
 '''This script represents the actions associated with the job of preprocessing'''
 
 
@@ -29,11 +28,7 @@ def main_preprocessing(project_dir:str) -> None:
     trans_df1 = add_student_id(trans_df0, rose) #<-Spark DF
     trans_df2 = normalize_numerical_features(trans_df1, rose) #<-Pd DF
     trans_df3 = oneHot_columns(trans_df2, rose)
-    trans_df4 = vectorize_text(trans_df3, rose, "keyword_comments")#<-do this for several cols
-    trans_df5 = vectorize_text(trans_df4, rose, "lesson_material")
-    trans_df5.show(vertical=True)
-    trans_df5.printSchema()
-    print(type(trans_df5))
+    trans_df4 = vectorize_text(trans_df3, rose)#<-do this for several cols
     rose.stop()
 
 
@@ -95,13 +90,13 @@ def oneHot_columns(df, spark:SparkSession):
     df3 = rose.oneHot_column(df2, spark, "lesson_day")
     return df3
     
-def vectorize_text(df, spark, col):
+def vectorize_text(df, spark):
     '''here we convert a purely categorical set of str features into arrays of n
        width where n is the number of rows'''
-       
-    #NOW, let us vectorize_text for each of the categorical cols:
-        #keyword comments, lesson material
-    return RoseSpark(config={}).vectorize_text(df, spark, col)
+    categorical_cols = ['keyword_comments', 'lesson_material']
+    df0 = RoseSpark(config={}).vectorize_text(df, spark, categorical_cols[0])
+    return RoseSpark(config={}).vectorize_text(df0, spark, categorical_cols[1])
+    
 
 
 """3.RUN MAIN FUNCTION"""  
