@@ -12,8 +12,9 @@ LOG_FILE = f"{project_dir}/logs/job-{os.path.basename(__file__)}.log"
 LOG_FORMAT = f"%(asctime)s - LINE:%(lineno)d - %(name)s - %(levelname)s - %(funcName)s - %(message)s"
 logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG, format=LOG_FORMAT)
 logger = logging.getLogger('log4j2')
-sys.path.insert(1, project_dir)
-   
+sys.path.insert(1, project_dir) 
+
+
 from spark_class import RoseSpark
 from pyspark.sql import SparkSession
 from pyspark.sql.dataframe import DataFrame 
@@ -29,6 +30,7 @@ def main_preprocessing(project_dir:str) -> None:
     trans_df2 = normalize_numerical_features(trans_df1, rose) #<-Pd DF
     trans_df3 = oneHot_columns(trans_df2, rose)
     trans_df4 = vectorize_text(trans_df3, rose)#<-do this for several cols
+    preprocessed_df_2_csv(trans_df4, "preprocessed_students")  
     rose.stop()
 
 
@@ -97,7 +99,12 @@ def vectorize_text(df, spark):
     df0 = RoseSpark(config={}).vectorize_text(df, spark, categorical_cols[0])
     return RoseSpark(config={}).vectorize_text(df0, spark, categorical_cols[1])
     
-
+def preprocessed_df_2_csv(df, file_name):
+    '''here is a job action that will save the preprocessed df as a csv in the same clean_students dir!'''
+    df1 = df.toPandas() 
+    df2 = df1.to_csv(f'{project_dir}/clean_csv/{file_name}.csv')  
+    print(f"{file_name}.csv CREATED!")
+    return df2
 
 """3.RUN MAIN FUNCTION"""  
 if __name__ == "__main__":

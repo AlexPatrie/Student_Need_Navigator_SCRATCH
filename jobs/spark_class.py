@@ -215,13 +215,10 @@ class RoseSpark:
         df2 = add_str_index(column, df1)#<-pandas df with new column
         #drop irrelevant
         df3 = df2.drop([column, f"{column}_tokenized"], axis=1)
-        #normalize string indicies between 0-1
-        #df3[f"normalized_{column}_vect"] = df3[f"{column}_vect"].apply([lambda x: x / max(x) for x in df3[f"{column}_vect"]])
-        #drop irrelevent
-        #df4 = df3.drop([f"{column}_vect"])
         #convert to spark for reiteration (spark in -> spark out)
-        df5 = spark.createDataFrame(df3)
-        return df5
+        df4 = spark.createDataFrame(df3)
+        return df4
         ###END VECTORIZE TEXT############ 
+        
         
         
