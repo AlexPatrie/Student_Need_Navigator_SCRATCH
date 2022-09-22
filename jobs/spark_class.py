@@ -133,7 +133,6 @@ class RoseSpark:
         df0 = create_id(df)
         return rearrange_cols(df0, spark)
         
-        
     def normalize_numerical_features(self, df, spark):
         #convert to pandas for normalization
         df0 = df.toPandas()
@@ -147,9 +146,6 @@ class RoseSpark:
         df1['normalized_status'].replace({0.0: 0.1}, inplace=True)
         df2 = spark.createDataFrame(df1)
         return df2
-    
-    
-########################################################################  
 
     def oneHot_column(self, df, spark, column:str): #<-column is that which will be oneHotted
         from pyspark.ml.feature import OneHotEncoder, StringIndexer 
@@ -165,7 +161,7 @@ class RoseSpark:
         
     def vectorize_text(self, df, spark, column):
         import pyspark.sql.functions as f
-        from pyspark.ml.feature import RegexTokenizer, HashingTF
+        from pyspark.ml.feature import RegexTokenizer
     
         def clean_None_vals(df):
             df0 = df.toPandas()
@@ -178,13 +174,7 @@ class RoseSpark:
             tokenizer = RegexTokenizer(outputCol=f"{column}_tokenized")
             tokenizer.setInputCol(column)
             df1 = tokenizer.transform(df0)
-            
-            hashingTF = HashingTF(inputCol=tokenizer.getOutputCol(), outputCol=f"{column}_features")
-            hashingTF.setNumFeatures(24) 
-            df2 = hashingTF.transform(df1)
-            #i want to map term_list tokw_comments_tokenized
-            #use sql?...ie select distinct column, count(distinct column) and map these two?
-            return df2
+            return df1
         
         '''outputs a pandas df with vectorized column!'''
         def add_str_index(column, df): 
@@ -226,8 +216,15 @@ class RoseSpark:
         df0 = clean_None_vals(df)
         df1 = tokenize(df0, column)
         df2 = add_str_index(column, df1)#<-pandas df with new column
-        print(df2.head())
-        return df2
+        #drop irrelevant
+        df3 = df2.drop([column, f"{column}_tokenized"], axis=1)
+        #normalize string indicies between 0-1
+        df3[f"normalized_{column}_vect"] = df3[f"{column}_vect"] / df3[f"{column}_vect"].max()
+        #drop irrelevent
+        df4 = df3.drop([f"{column}_vect"])
+        #convert to spark for reiteration (spark in -> spark out)
+        df5 = spark.createDataFrame(df4)
+        return df5
         ###END VECTORIZE TEXT############
         
         

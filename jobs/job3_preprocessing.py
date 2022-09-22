@@ -7,21 +7,20 @@ from time import asctime
 '''This script represents the actions associated with the job of preprocessing'''
 
 
-"""LOGGING BLOCK"""
+"""-LOGGING BLOCK"""
 project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG_FILE = f"{project_dir}/logs/job-{os.path.basename(__file__)}.log"
 LOG_FORMAT = f"%(asctime)s - LINE:%(lineno)d - %(name)s - %(levelname)s - %(funcName)s - %(message)s"
 logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG, format=LOG_FORMAT)
 logger = logging.getLogger('log4j2')
 sys.path.insert(1, project_dir)
-
-#we are currently not in need of a postgres connector!
    
 from spark_class import RoseSpark
 from pyspark.sql import SparkSession
 from pyspark.sql.dataframe import DataFrame 
 
-"""MAIN EXECUTABLE FUNCTION THAT HOUSES JOB ACTIONS"""
+
+"""-MAIN EXECUTABLE FUNCTION THAT HOUSES JOB ACTIONS"""
 def main_preprocessing(project_dir:str) -> None:
     conf = open_config(f"{project_dir}/config/config.json")
     rose = spark_start(conf)#<--Spark Cursor
@@ -31,10 +30,16 @@ def main_preprocessing(project_dir:str) -> None:
     trans_df2 = normalize_numerical_features(trans_df1, rose) #<-Pd DF
     trans_df3 = oneHot_columns(trans_df2, rose)
     trans_df4 = vectorize_text(trans_df3, rose, "keyword_comments")#<-do this for several cols
+    trans_df5 = vectorize_text(trans_df4, rose, "lesson_material")
+    trans_df5.show(vertical=True)
+    trans_df5.printSchema()
+    print(type(trans_df5))
     rose.stop()
 
 
-"""CONFIG BLOCK"""
+    '''setup blocks(move logging block here :) )'''
+
+"""-CONFIG BLOCK"""
 def open_config(file_path: str) -> dict:
     if isinstance(file_path, str):
         return RoseSpark(config={}).open_file(file_path)
@@ -56,6 +61,9 @@ def show_dfs_in_dir(spark:SparkSession, file_dirpath:str) -> DataFrame:
                 RoseSpark(config={}).fetch_read_csv(spark, file_dirpath, filenames[i])
                 i += 1
 
+
+    '''Job Actions(derived from class methods)'''
+
 """1. READ IN FRESHLY-WRITTEN CSV TO SPARK DF FROM !DEDICATED(explicit)! CLEAN DIR"""
 #I wanted to be explicit about the naming of arg "file_index" so that it is not ambiguous like "i"
 def fetch_read_csv(spark:SparkSession, file_dirpath:str, file_index:int) -> DataFrame:
@@ -65,6 +73,7 @@ def fetch_read_csv(spark:SparkSession, file_dirpath:str, file_index:int) -> Data
             return RoseSpark(config={}).fetch_read_csv(spark, 
                                                        file_dirpath, 
                                                        filenames[file_index])#<-going to specify -1 for LAST file in dir
+
 
 """2.PREPROCESSING JOBS(origin: fetch_read_csv):
     add_student_id->normalized_numerical_features->oneHot_columns->vectorize_text==>preprocessed data"""
@@ -89,8 +98,12 @@ def oneHot_columns(df, spark:SparkSession):
 def vectorize_text(df, spark, col):
     '''here we convert a purely categorical set of str features into arrays of n
        width where n is the number of rows'''
+       
+    #NOW, let us vectorize_text for each of the categorical cols:
+        #keyword comments, lesson material
     return RoseSpark(config={}).vectorize_text(df, spark, col)
 
-"""RUN MAIN FUNCTION"""  
+
+"""3.RUN MAIN FUNCTION"""  
 if __name__ == "__main__":
     main_preprocessing(project_dir)
