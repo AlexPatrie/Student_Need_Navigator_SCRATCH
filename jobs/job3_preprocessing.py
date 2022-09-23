@@ -18,7 +18,7 @@ sys.path.insert(1, project_dir)
 from spark_class import RoseSpark
 from pyspark.sql import SparkSession
 from pyspark.sql.dataframe import DataFrame 
-
+from connectionDetails import THIS_WEEK
 
 """-MAIN EXECUTABLE FUNCTION THAT HOUSES JOB ACTIONS"""
 def main_preprocessing(project_dir:str) -> None:
@@ -30,7 +30,7 @@ def main_preprocessing(project_dir:str) -> None:
     trans_df2 = normalize_numerical_features(trans_df1, rose) #<-Pd DF
     trans_df3 = oneHot_columns(trans_df2, rose)
     trans_df4 = vectorize_text(trans_df3, rose)#<-do this for several cols
-    preprocessed_df_2_csv(trans_df4, "preprocessed_students")  
+    preprocessed_df_2_csv(trans_df4, f"preprocessed_students_{THIS_WEEK}")  
     rose.stop()
 
 
