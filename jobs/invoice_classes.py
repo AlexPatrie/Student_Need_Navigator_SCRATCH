@@ -1,10 +1,5 @@
-from typing import Optional
 from sqlalchemy.orm import declarative_base, sessionmaker
 from invoice_connection_details import THIS_WEEK
-import os 
-import pandas as pd 
-
-
 
 BASE = declarative_base()
 TABLE_NAME = f"alexander_patrie_prek_invoice_for_{THIS_WEEK}"
@@ -16,15 +11,16 @@ class Invoice(BASE):
     SERVICE_DATE = Column(String())
     SERVICE_RENDERED = Column(String())
     DURATION = Column(Integer())
-    
-    
 #################################END_INVOICE_CLASS###############################
-    
-    
+
+
+from typing import Optional 
+import os 
+import pandas as pd    
+
 class Pencil(Invoice):
     
     from sqlalchemy import create_engine
-
     def __init__(self, engine:create_engine, connection:str, table_name:Optional[str]=TABLE_NAME,
                  base:Optional[declarative_base]=BASE, new_invoice:Optional[bool]=True):
         '''MUST SPECIFY TABLE_NAME!'''
@@ -82,13 +78,10 @@ class Pencil(Invoice):
         df.to_excel(excel_path,  
                     header=True)
     
-     
     def _add_total_duration(self, df:pd.DataFrame):
         df["TOTAL_WEEK_DURATION"] = df["DURATION"].sum()
         df.iloc[1:4, 4] = ""
         return df 
-        
-
 ##############################END_PENCIL_CLASS####################################
 
 
@@ -97,7 +90,6 @@ import matplotlib.pyplot as plt
 from invoice_connection_details import THIS_WEEK
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.font_manager import FontProperties
-
 
 class DfToPDF():
     '''inspired by towarddatascience.com'''
@@ -145,6 +137,4 @@ class DfToPDF():
                     pdf.savefig(fig, bbox_inches='tight')
                     print("\nPDF of Invoice created!\n")
                     plt.close()
-    
-
 ####################################END_PDF_CLASS####################################
