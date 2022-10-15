@@ -72,28 +72,6 @@ if __name__ == "__main__":
     print("Thank you for using me. Job done.")
 
 
-
-
-
-'''
-#MAIN ACTIVATION FUNCTION
-def main(new_invoice_batch:(list), week_number:int):
-    from os import path as p, mkdir
-    project_dir = p.dirname(p.dirname(p.abspath(__file__)))
-    excel_invoice_path, pdf_invoice_path = PENCIL.__getitem__()[1], PENCIL.__getitem__()[2]
-    insert_invoice_batch(pencil=PENCIL, batch_info=new_invoice_batch[week_number])
-    df0 = fetch_df(PENCIL)
-    create_pdf_from_df(PDF, df0, pdf_invoice_path)
-    create_excel_from_df(PENCIL, excel_invoice_path, df0)
-
-    
-if __name__ == "__main__":
-    #just run the weeks that you have DONE so far here as args in main()
-    main(new_invoice_batch=(WK0_BATCH, WK1_BATCH,
-                            WK2_BATCH, WK3_BATCH),
-        week_number=PENCIL.invoice_week)
-    print("Thank you for using me. Job done.")
-'''
     
     
     
